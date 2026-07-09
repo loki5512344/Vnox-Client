@@ -1,0 +1,52 @@
+[workspace]
+resolver = "2"
+
+[package]
+name        = "vnox-client"
+description = "VNOX desktop client — egui + wgpu"
+version     = "0.1.0"
+edition     = "2024"
+license     = "GPL-3.0"
+authors     = ["VNOX Contributors"]
+repository  = "https://github.com/loki5512344/Vnox"
+rust-version = "1.85"
+default-run = "vnox-client"
+
+[lib]
+name = "vnox_client"
+path = "src/lib.rs"
+
+[[bin]]
+name = "vnox-client"
+path = "src/main.rs"
+
+[[bin]]
+name = "vnox-e2e-voice"
+path = "src/bin/e2e_voice.rs"
+
+[dependencies]
+tokio              = { version = "1.52", features = ["full"] }
+serde              = { version = "1", features = ["derive"] }
+serde_json         = "1"
+ed25519-dalek      = { version = "2", features = ["rand_core"] }
+x25519-dalek       = { version = "2", features = ["static_secrets"] }
+chacha20poly1305   = "0.10"
+hkdf               = "0.13"
+sha2               = "0.11"
+rand               = "0.8"
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow             = "1"
+hex                = "0.4"
+uuid               = { version = "1", features = ["v4"] }
+argon2             = "0.5"
+opus               = "0.3"
+cpal               = "0.18"
+rodio              = "0.22"
+dirs               = "6"
+eframe             = { version = "0.33", features = ["wgpu"] }
+nnnoiseless        = { version = "0.5.2", default-features = false, optional = true }
+
+[features]
+default = []
+rnnoise = ["dep:nnnoiseless"]
