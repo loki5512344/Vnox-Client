@@ -2,15 +2,15 @@ use crate::jitter::{BufferedPacket, JitterBuffer};
 use anyhow::Result;
 use cpal::traits::{DeviceTrait, StreamTrait};
 use std::sync::{
+    Arc, Mutex,
     atomic::{AtomicU64, Ordering},
     mpsc::TryRecvError,
-    Arc, Mutex,
 };
 use std::time::{Duration, Instant};
 use tracing::{info, warn};
 
-use crate::audio::config::{self, AudioConfig, OPUS_RATE};
 use crate::audio::IncomingVoice;
+use crate::audio::config::{self, AudioConfig, OPUS_RATE};
 
 #[derive(Debug, Clone)]
 pub struct JitterConfig {

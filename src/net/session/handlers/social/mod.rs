@@ -140,6 +140,53 @@ pub async fn handle_cmd(
             })?;
             framing::io::write_encrypted(stream, PID_DM_HISTORY, seq, &payload, crypto).await?;
         }
+        NetCommand::E2eeDmKeyExchange {
+            dm_id,
+            e2ee_public_key,
+        } => {
+            let payload = serde_json::to_vec(&E2eeDmKeyExchangePayload {
+                dm_id,
+                e2ee_public_key,
+            })?;
+            framing::io::write_encrypted(stream, PID_E2EE_DM_KEY_EXCHANGE, seq, &payload, crypto)
+                .await?;
+        }
+        NetCommand::E2eeDmKeyExchangeAck { dm_id } => {
+            let payload = serde_json::to_vec(&E2eeDmKeyExchangeAckPayload { dm_id })?;
+            framing::io::write_encrypted(
+                stream,
+                PID_E2EE_DM_KEY_EXCHANGE_ACK,
+                seq,
+                &payload,
+                crypto,
+            )
+            .await?;
+        }
+        NetCommand::E2eeDmSend { dm_id, ciphertext } => {
+            let msg = E2eeDmMessagePayload {
+                dm_id,
+                sender_id: identity.pubkey_hex.clone(),
+                ciphertext,
+                timestamp: now_ms(),
+            };
+            framing::io::write_encrypted(
+                stream,
+                PID_E2EE_DM_MESSAGE,
+                seq,
+                &serde_json::to_vec(&msg)?,
+                crypto,
+            )
+            .await?;
+        }
+        NetCommand::E2eeDmHistory { dm_id, limit } => {
+            let payload = serde_json::to_vec(&E2eeDmHistoryPayload {
+                dm_id,
+                messages: vec![],
+                limit,
+            })?;
+            framing::io::write_encrypted(stream, PID_E2EE_DM_HISTORY, seq, &payload, crypto)
+                .await?;
+        }
         _ => {}
     }
     Ok(())

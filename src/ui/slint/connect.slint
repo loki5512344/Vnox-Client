@@ -1,0 +1,101 @@
+import { Theme } from "theme.slint";
+import { Button, ListView, LineEdit } from "std-widgets.slint";
+
+export struct BookmarkItem {
+    name: string,
+    address: string,
+}
+
+export component ConnectScreen {
+    in-out property <[BookmarkItem]> bookmarks;
+    in-out property <string> address-input;
+    in-out property <string> status-text;
+    in-out property <bool> connecting;
+    in-out property <bool> auto-reconnect;
+    in-out property <string> node-name;
+
+    callback connect(string);
+    callback disconnect();
+    callback remove-bookmark(string);
+    callback add-bookmark(string);
+
+    VerticalLayout {
+        alignment: center;
+        spacing: 16px;
+
+        Text { text: "VNOX"; color: Theme.accent; font-size: 36px; font-weight: 700; }
+        Text { text: "Self-hosted voice & chat"; color: Theme.text-secondary; font-size: 14px; }
+
+        HorizontalLayout {
+            LineEdit {
+                text <=> address-input;
+                placeholder-text: "server:7600";
+                width: 300px;
+            }
+            Rectangle {
+                width: 100px;
+                height: 30px;
+                background: Theme.accent;
+                border-radius: 6px;
+                TouchArea {
+                    enabled: !connecting;
+                    clicked => { connect(address-input); }
+                }
+                Text {
+                    text: connecting ? "Connecting..." : "Connect";
+                    color: Theme.text-primary;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+
+        Text { text: status-text; color: Theme.text-muted; }
+
+        HorizontalLayout {
+            Rectangle {
+                width: 16px;
+                height: 16px;
+                background: auto-reconnect ? Theme.accent : Theme.bg-elevated;
+                border-radius: 3px;
+                border-width: 1px;
+                border-color: Theme.text-muted;
+                TouchArea {
+                    clicked => { auto-reconnect = !auto-reconnect; }
+                }
+            }
+            Text { text: "Auto-reconnect"; color: Theme.text-secondary; }
+        }
+
+        Text { text: "Saved Servers"; color: Theme.text-primary; font-size: 16px; }
+        ListView {
+            for bm in bookmarks: Rectangle {
+                height: 40px;
+                HorizontalLayout {
+                    padding: 8px;
+                    Text { text: bm.name; color: Theme.text-primary; }
+                    Text { text: bm.address; color: Theme.text-muted; }
+                    HorizontalLayout {
+                        Button { text: "Connect"; clicked => { connect(bm.address); } }
+                        Button { text: "✕"; clicked => { remove-bookmark(bm.address); } }
+                    }
+                }
+            }
+        }
+
+        HorizontalLayout {
+            Button { text: "+ Add Server"; clicked => { add-bookmark(address-input); } }
+        }
+
+        Text { text: node-name; color: Theme.success; }
+        Rectangle {
+            width: 100px;
+            height: 30px;
+            background: Theme.danger;
+            border-radius: 6px;
+            visible: node-name != "";
+            TouchArea { clicked => { disconnect(); } }
+            Text { text: "Disconnect"; color: Theme.text-primary; horizontal-alignment: center; vertical-alignment: center; }
+        }
+    }
+}

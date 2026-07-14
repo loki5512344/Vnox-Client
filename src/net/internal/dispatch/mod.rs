@@ -30,7 +30,11 @@ pub async fn incoming(pid: u16, payload: &[u8], tx: &mpsc::Sender<NetEvent>) -> 
         | PID_MESSAGE_REACTION_REMOVE
         | PID_MESSAGE_EDIT
         | PID_MESSAGE_DELETE
-        | PID_FRIEND_EVENT => dm::handle(pid, payload, tx).await?,
+        | PID_FRIEND_EVENT
+        | PID_E2EE_DM_KEY_EXCHANGE
+        | PID_E2EE_DM_KEY_EXCHANGE_ACK
+        | PID_E2EE_DM_MESSAGE
+        | PID_E2EE_DM_HISTORY => dm::handle(pid, payload, tx).await?,
 
         PID_GUILD_LIST
         | PID_GUILD_CREATE

@@ -1,0 +1,147 @@
+import { Theme } from "theme.slint";
+import { Sidebar, ChannelItem, GuildItem } from "sidebar.slint";
+import { ChatPanel, MessageItem, MemberItem } from "chat.slint";
+import { FriendsPanel, FriendItem } from "friends.slint";
+import { VoicePanel, VoiceMemberItem } from "voice.slint";
+import { BookmarkItem, ConnectScreen } from "connect.slint";
+
+export component MainWindow inherits Window {
+    in-out property <[ChannelItem]> channels;
+    in-out property <[GuildItem]> guilds;
+    in-out property <[string]> dm-conversations;
+    in-out property <string> username;
+    in-out property <string> user-status;
+    in-out property <string> active-channel-id;
+    in-out property <int> active-guild-idx;
+
+    in-out property <string> active-channel-name;
+    in-out property <[MessageItem]> messages;
+    in-out property <[MemberItem]> members;
+    in-out property <string> input-text;
+    in-out property <bool> is-dm;
+    in-out property <bool> e2ee-enabled;
+    in-out property <string> dm-partner-name;
+    in-out property <bool> show-chat;
+    in-out property <bool> show-friends;
+    in-out property <bool> show-voice;
+
+    in-out property <[FriendItem]> friends;
+    in-out property <[FriendItem]> pending-requests;
+    in-out property <[string]> blocked-users;
+    in-out property <string> friends-active-tab;
+    in-out property <string> add-friend-input;
+
+    in-out property <[VoiceMemberItem]> voice-members;
+    in-out property <bool> mic-enabled;
+    in-out property <bool> deafened;
+    in-out property <string> voice-channel-name;
+    in-out property <string> activity-banner;
+
+    in-out property <[BookmarkItem]> bookmarks: [];
+    in-out property <string> address-input: "";
+    in-out property <string> status-text: "";
+    in-out property <bool> connecting: false;
+    in-out property <bool> auto-reconnect: false;
+    in-out property <string> node-name: "";
+
+    in-out property <string> identity-pubkey: "";
+    in-out property <bool> vault-enabled: false;
+    in-out property <string> voice-input-device: "";
+    in-out property <string> voice-output-device: "";
+    in-out property <float> voice-bitrate: 64.0;
+    in-out property <int> vad-mode: 0;
+    in-out property <float> volume: 100.0;
+    in-out property <string> active-tab: "audio";
+
+    callback channel-selected(string);
+    callback guild-selected(int);
+    callback dm-selected(string);
+    callback disconnect();
+    callback send-message(string, string);
+    callback load-more(string);
+    callback add-friend(string);
+    callback accept-friend(string);
+    callback decline-friend(string);
+    callback remove-friend(string);
+    callback start-dm(string);
+    callback toggle-mic();
+    callback toggle-deafen();
+    callback leave-voice();
+    callback connect(string);
+    callback remove-bookmark(string);
+    callback add-bookmark(string);
+    callback close-settings();
+    callback set-passphrase(string);
+    callback export-keyfile();
+    callback import-keyfile();
+
+    min-width: 900px;
+    min-height: 560px;
+    title: "Vnox";
+    background: Theme.bg-base;
+
+    if node-name == "" : ConnectScreen {
+        bookmarks: root.bookmarks;
+        address-input: root.address-input;
+        status-text: root.status-text;
+        connecting: root.connecting;
+        auto-reconnect: root.auto-reconnect;
+        node-name: root.node-name;
+        connect(address) => { root.connect(address); }
+        disconnect => { root.disconnect(); }
+        remove-bookmark(address) => { root.remove-bookmark(address); }
+        add-bookmark(address) => { root.add-bookmark(address); }
+    }
+    if node-name != "" : HorizontalLayout {
+        sidebar := Sidebar {
+            channels: root.channels;
+            guilds: root.guilds;
+            dm-conversations: root.dm-conversations;
+            username: root.username;
+            user-status: root.user-status;
+            active-channel-id: root.active-channel-id;
+            active-guild-idx: root.active-guild-idx;
+            channel-selected(id) => { root.channel-selected(id); }
+            guild-selected(idx) => { root.guild-selected(idx); }
+            dm-selected(id) => { root.dm-selected(id); }
+            disconnect => { root.disconnect(); }
+        }
+        chat-panel := ChatPanel {
+            visible: show-chat;
+            active-channel-id: root.active-channel-id;
+            active-channel-name: root.active-channel-name;
+            messages: root.messages;
+            members: root.members;
+            input-text: root.input-text;
+            is-dm: root.is-dm;
+            e2ee-enabled: root.e2ee-enabled;
+            dm-partner-name: root.dm-partner-name;
+            send-message(id, text) => { root.send-message(id, text); }
+            load-more(id) => { root.load-more(id); }
+        }
+        friends-panel := FriendsPanel {
+            visible: show-friends;
+            friends: root.friends;
+            pending-requests: root.pending-requests;
+            blocked-users: root.blocked-users;
+            active-tab: root.friends-active-tab;
+            add-friend-input: root.add-friend-input;
+            add-friend(id) => { root.add-friend(id); }
+            accept-friend(id) => { root.accept-friend(id); }
+            decline-friend(id) => { root.decline-friend(id); }
+            remove-friend(id) => { root.remove-friend(id); }
+            start-dm(id) => { root.start-dm(id); }
+        }
+        voice-panel := VoicePanel {
+            visible: show-voice;
+            members: root.voice-members;
+            mic-enabled: root.mic-enabled;
+            deafened: root.deafened;
+            channel-name: root.voice-channel-name;
+            activity-banner: root.activity-banner;
+            toggle-mic => { root.toggle-mic(); }
+            toggle-deafen => { root.toggle-deafen(); }
+            leave-voice => { root.leave-voice(); }
+        }
+    }
+}

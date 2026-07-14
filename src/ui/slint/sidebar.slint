@@ -1,0 +1,92 @@
+import { Theme } from "theme.slint";
+
+export struct ChannelItem {
+    channel_id: string,
+    name: string,
+    kind: string,
+}
+
+export struct GuildItem {
+    guild_id: string,
+    name: string,
+}
+
+export component Sidebar {
+    in-out property <[GuildItem]> guilds;
+    in-out property <[ChannelItem]> channels;
+    in-out property <[string]> dm-conversations;
+    in-out property <string> username;
+    in-out property <string> user-status;
+    in-out property <string> active-channel-id;
+    in-out property <int> active-guild-idx;
+
+    callback channel-selected(string);
+    callback guild-selected(int);
+    callback dm-selected(string);
+    callback disconnect();
+
+    width: 240px;
+    height: 100%;
+
+    Rectangle {
+        background: Theme.bg-base;
+        width: 100%;
+        height: 100%;
+
+        VerticalLayout {
+            Rectangle {
+                height: 48px;
+                background: Theme.bg-surface;
+                HorizontalLayout {
+                    padding: 8px;
+                    Text { text: "Vnox"; color: Theme.accent; font-size: 18px; }
+                }
+            }
+
+            VerticalLayout {
+                for item in channels: Rectangle {
+                    height: 36px;
+                    background: item.channel_id == active-channel-id ? Theme.bg-elevated : Theme.bg-base;
+                    HorizontalLayout {
+                        padding: 8px;
+                        Text {
+                            text: item.kind == "voice" ? "🔊 " : "# ";
+                            color: Theme.text-secondary;
+                        }
+                        Text { text: item.name; color: Theme.text-primary; }
+                    }
+                    TouchArea {
+                        clicked => { channel-selected(item.channel_id); }
+                    }
+                }
+            }
+
+            VerticalLayout {
+                for dm in dm-conversations: Rectangle {
+                    height: 36px;
+                    HorizontalLayout {
+                        padding: 8px;
+                        Text { text: "@"; color: Theme.text-secondary; }
+                        Text { text: dm; color: Theme.text-primary; }
+                    }
+                    TouchArea {
+                        clicked => { dm-selected(dm); }
+                    }
+                }
+            }
+
+            Rectangle {
+                height: 52px;
+                background: Theme.bg-surface;
+                HorizontalLayout {
+                    padding: 8px;
+                    Text { text: username; color: Theme.text-primary; }
+                    Text { text: user-status; color: Theme.text-muted; }
+                    TouchArea {
+                        clicked => { disconnect(); }
+                    }
+                }
+            }
+        }
+    }
+}

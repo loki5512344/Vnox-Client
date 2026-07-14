@@ -1,6 +1,35 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct E2eeDmKeyExchangePayload {
+    pub dm_id: String,
+    pub e2ee_public_key: Vec<u8>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct E2eeDmKeyExchangeAckPayload {
+    pub dm_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct E2eeDmMessagePayload {
+    pub dm_id: String,
+    pub sender_id: String,
+    #[serde(with = "serde_bytes")]
+    pub ciphertext: Vec<u8>,
+    pub timestamp: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct E2eeDmHistoryPayload {
+    pub dm_id: String,
+    #[serde(default)]
+    pub messages: Vec<E2eeDmMessagePayload>,
+    #[serde(default)]
+    pub limit: Option<i64>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct DmStartPayload {
     pub target_user_id: String,
 }

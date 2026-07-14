@@ -224,4 +224,21 @@ pub enum NetEvent {
         channel_id: String,
         message_id: String,
     },
+    E2eeDmKeyExchange {
+        dm_id: String,
+        e2ee_public_key: Vec<u8>,
+    },
+    E2eeDmKeyExchangeAck {
+        dm_id: String,
+    },
+    E2eeDmMessage {
+        dm_id: String,
+        sender_id: String,
+        ciphertext: Vec<u8>,
+        timestamp: i64,
+    },
+    E2eeDmHistory {
+        dm_id: String,
+        messages: Vec<crate::net::payloads::E2eeDmMessagePayload>,
+    },
 }

@@ -1,19 +1,5 @@
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq, Default)]
-pub enum SettingsPage {
-    Identity,
-    #[default]
-    Voice,
-    AudioOutput,
-    Network,
-    Overlay,
-    Appearance,
-    Keybinds,
-    Plugins,
-    Advanced,
-}
-
 #[derive(Debug, Clone)]
 pub struct Channel {
     pub id: String,
@@ -38,16 +24,17 @@ pub struct ChatMessage {
 #[derive(Debug, Clone)]
 pub struct DmConversation {
     pub dm_id: String,
-    pub other_user_id: String,
     pub other_nickname: String,
     pub unread_count: u32,
+    pub e2ee_enabled: bool,
+    pub e2ee_peer_public_key: Option<Vec<u8>>,
+    pub e2ee_shared_secret: Option<[u8; 32]>,
 }
 
 #[derive(Debug, Clone)]
 pub struct GuildState {
     pub guild_id: String,
     pub name: String,
-    pub owner_id: String,
     pub member_count: u32,
 }
 
@@ -55,8 +42,6 @@ pub struct GuildState {
 pub struct FriendState {
     pub user_id: String,
     pub nickname: String,
-    pub status: String,
-    pub since: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -78,15 +63,4 @@ pub(crate) fn bookmark_label_from_address(address: &str) -> String {
         .chars()
         .take(12)
         .collect()
-}
-
-pub(crate) fn now_utc_hms() -> String {
-    let secs = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
-    let h = (secs % 86400) / 3600;
-    let m = (secs % 3600) / 60;
-    let s = secs % 60;
-    format!("{h:02}:{m:02}:{s:02}")
 }

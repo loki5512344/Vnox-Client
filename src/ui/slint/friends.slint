@@ -1,0 +1,123 @@
+import { Theme } from "theme.slint";
+
+export struct FriendItem {
+    user_id: string,
+    nickname: string,
+    status: string,
+}
+
+export component FriendsPanel {
+    in-out property <[FriendItem]> friends;
+    in-out property <[FriendItem]> pending-requests;
+    in-out property <[string]> blocked-users;
+    in-out property <string> active-tab;
+    in-out property <string> add-friend-input;
+
+    callback add-friend(string);
+    callback accept-friend(string);
+    callback decline-friend(string);
+    callback remove-friend(string);
+    callback start-dm(string);
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 8px;
+
+        Text {
+            text: "Friends";
+            color: Theme.text-primary;
+            font-size: 18px;
+        }
+
+        HorizontalLayout {
+            spacing: 4px;
+            Rectangle {
+                height: 28px;
+                background: Theme.bg-interactive;
+                border-radius: Theme.radius;
+                TouchArea {
+                    clicked => { active-tab = "online"; }
+                }
+                Text { text: "Online"; color: Theme.text-primary; horizontal-alignment: center; vertical-alignment: center; }
+            }
+            Rectangle {
+                height: 28px;
+                background: Theme.bg-interactive;
+                border-radius: Theme.radius;
+                TouchArea {
+                    clicked => { active-tab = "all"; }
+                }
+                Text { text: "All"; color: Theme.text-primary; horizontal-alignment: center; vertical-alignment: center; }
+            }
+            Rectangle {
+                height: 28px;
+                background: Theme.bg-interactive;
+                border-radius: Theme.radius;
+                TouchArea {
+                    clicked => { active-tab = "pending"; }
+                }
+                Text { text: "Pending"; color: Theme.text-primary; horizontal-alignment: center; vertical-alignment: center; }
+            }
+            Rectangle {
+                height: 28px;
+                background: Theme.bg-interactive;
+                border-radius: Theme.radius;
+                TouchArea {
+                    clicked => { active-tab = "blocked"; }
+                }
+                Text { text: "Blocked"; color: Theme.text-primary; horizontal-alignment: center; vertical-alignment: center; }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 8px;
+            TextInput {
+                text <=> add-friend-input;
+                horizontal-stretch: 1;
+            }
+            Rectangle {
+                width: 32px;
+                height: 32px;
+                background: Theme.accent;
+                border-radius: Theme.radius;
+                TouchArea {
+                    clicked => {
+                        add-friend(add-friend-input);
+                        add-friend-input = "";
+                    }
+                }
+                Text { text: "+"; color: Theme.text-primary; horizontal-alignment: center; vertical-alignment: center; }
+            }
+        }
+
+        Flickable {
+            VerticalLayout {
+                for f in friends: Rectangle {
+                    height: 48px;
+                    HorizontalLayout {
+                        padding: 8px;
+                        spacing: 8px;
+                        Text {
+                            text: f.nickname;
+                            color: Theme.text-primary;
+                        }
+                        Text {
+                            text: f.status;
+                            color: Theme.text-muted;
+                        }
+                        Rectangle {
+                            width: 40px;
+                            height: 28px;
+                            background: Theme.accent;
+                            border-radius: Theme.radius;
+                            TouchArea {
+                                clicked => { start-dm(f.user_id); }
+                            }
+                            Text { text: "DM"; color: Theme.text-primary; horizontal-alignment: center; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

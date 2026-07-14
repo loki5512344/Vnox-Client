@@ -1,0 +1,68 @@
+import { Theme } from "theme.slint";
+import { Button } from "std-widgets.slint";
+
+export component SettingsWindow inherits Window {
+    title: "Settings";
+    width: 720px;
+    height: 520px;
+    background: Theme.bg-base;
+
+    in-out property <string> identity-pubkey;
+    in-out property <bool> vault-enabled;
+    in-out property <string> voice-input-device;
+    in-out property <string> voice-output-device;
+    in-out property <float> voice-bitrate;
+    in-out property <int> vad-mode;
+    in-out property <float> volume;
+    in-out property <string> active-tab;
+
+    callback close();
+    callback set-passphrase(string);
+    callback export-keyfile();
+    callback import-keyfile();
+
+    VerticalLayout {
+        HorizontalLayout {
+            Button { text: "Audio"; clicked => { active-tab = "audio"; } }
+            Button { text: "Network"; clicked => { active-tab = "network"; } }
+            Button { text: "Identity"; clicked => { active-tab = "identity"; } }
+            Button { text: "App"; clicked => { active-tab = "app"; } }
+        }
+
+        if active-tab == "identity": VerticalLayout {
+            Text { text: "Identity"; color: Theme.text-primary; font-size: 18px; }
+            Text { text: "Public Key: " + identity-pubkey; color: Theme.text-secondary; }
+            Button { text: vault-enabled ? "Remove Passphrase" : "Set Passphrase"; clicked => { set-passphrase(""); } }
+            Button { text: "Export Keyfile"; clicked => { export-keyfile(); } }
+            Button { text: "Import Keyfile"; clicked => { import-keyfile(); } }
+        }
+
+        if active-tab == "audio": VerticalLayout {
+            Text { text: "Voice Settings"; color: Theme.text-primary; font-size: 18px; }
+            Text { text: "Input: " + voice-input-device; color: Theme.text-secondary; }
+            Text { text: "Output: " + voice-output-device; color: Theme.text-secondary; }
+            HorizontalLayout {
+                Text { text: "Bitrate:"; color: Theme.text-secondary; }
+                Text { text: voice-bitrate; color: Theme.text-primary; }
+            }
+            HorizontalLayout {
+                Text { text: "VAD Mode:"; color: Theme.text-secondary; }
+                Text { text: vad-mode == 0 ? "PTT" : vad-mode == 1 ? "VAD" : "Always On"; color: Theme.text-primary; }
+            }
+            HorizontalLayout {
+                Text { text: "Volume:"; color: Theme.text-secondary; }
+                Text { text: volume; color: Theme.text-primary; }
+            }
+        }
+
+        if active-tab == "network": VerticalLayout {
+            Text { text: "Network"; color: Theme.text-primary; font-size: 18px; }
+        }
+
+        if active-tab == "app": VerticalLayout {
+            Text { text: "Appearance"; color: Theme.text-primary; font-size: 18px; }
+        }
+
+        Button { text: "Close"; horizontal-alignment: center; clicked => { close(); } }
+    }
+}

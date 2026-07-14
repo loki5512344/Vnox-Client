@@ -146,6 +146,41 @@ pub async fn handle(pid: u16, payload: &[u8], tx: &mpsc::Sender<NetEvent>) -> Re
                 _ => debug!("unhandled friend event: {}", p.event_type),
             }
         }
+        PID_E2EE_DM_KEY_EXCHANGE => {
+            let p: E2eeDmKeyExchangePayload = serde_json::from_slice(payload)?;
+            let _ = tx
+                .send(NetEvent::E2eeDmKeyExchange {
+                    dm_id: p.dm_id,
+                    e2ee_public_key: p.e2ee_public_key,
+                })
+                .await;
+        }
+        PID_E2EE_DM_KEY_EXCHANGE_ACK => {
+            let p: E2eeDmKeyExchangeAckPayload = serde_json::from_slice(payload)?;
+            let _ = tx
+                .send(NetEvent::E2eeDmKeyExchangeAck { dm_id: p.dm_id })
+                .await;
+        }
+        PID_E2EE_DM_MESSAGE => {
+            let p: E2eeDmMessagePayload = serde_json::from_slice(payload)?;
+            let _ = tx
+                .send(NetEvent::E2eeDmMessage {
+                    dm_id: p.dm_id,
+                    sender_id: p.sender_id,
+                    ciphertext: p.ciphertext,
+                    timestamp: p.timestamp,
+                })
+                .await;
+        }
+        PID_E2EE_DM_HISTORY => {
+            let p: E2eeDmHistoryPayload = serde_json::from_slice(payload)?;
+            let _ = tx
+                .send(NetEvent::E2eeDmHistory {
+                    dm_id: p.dm_id,
+                    messages: p.messages,
+                })
+                .await;
+        }
         _ => {}
     }
     Ok(())
