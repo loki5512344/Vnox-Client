@@ -57,6 +57,27 @@ impl Default for UiState {
             remote_speaking: false,
             last_remote_speaker_id: String::new(),
             last_voice_packet_ms: 0,
+
+            replying_to_message: None,
+            replying_to_sender: String::new(),
+            replying_to_content: String::new(),
+            editing_message_id: None,
+
+            settings_passphrase_open: false,
+            settings_passphrase_input: String::new(),
+            settings_passphrase_confirm: String::new(),
+            settings_passphrase_error: None,
+
+            settings_export_open: false,
+            settings_export_pass: String::new(),
+            settings_export_confirm: String::new(),
+            settings_export_output: None,
+            settings_export_error: None,
+
+            settings_import_open: false,
+            settings_import_input: String::new(),
+            settings_import_pass: String::new(),
+            settings_import_error: None,
         }
     }
 }

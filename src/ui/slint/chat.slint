@@ -25,6 +25,56 @@ export struct MemberItem {
     status: string,
 }
 
+component MessageActions {
+    in-out property <bool> is-own;
+    in-out property <string> msg-id;
+
+    callback react(string, string);
+    callback reply-to-msg(string);
+    callback edit-msg(string);
+    callback delete-msg(string);
+
+    HorizontalLayout {
+        spacing: 4px;
+        Rectangle {
+            width: 24px; height: 24px; border-radius: 4px;
+            background: Theme.bg-interactive;
+            TouchArea { clicked => { react(msg-id, "👍"); } }
+            Text { text: "👍"; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+        }
+        Rectangle {
+            width: 24px; height: 24px; border-radius: 4px;
+            background: Theme.bg-interactive;
+            TouchArea { clicked => { react(msg-id, "❤️"); } }
+            Text { text: "❤️"; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+        }
+        Rectangle {
+            width: 24px; height: 24px; border-radius: 4px;
+            background: Theme.bg-interactive;
+            TouchArea { clicked => { react(msg-id, "😂"); } }
+            Text { text: "😂"; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+        }
+        Rectangle {
+            width: 24px; height: 24px; border-radius: 4px;
+            background: Theme.bg-interactive;
+            TouchArea { clicked => { reply-to-msg(msg-id); } }
+            Text { text: "↩"; color: Theme.text-secondary; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+        }
+        if is-own : Rectangle {
+            width: 24px; height: 24px; border-radius: 4px;
+            background: Theme.bg-interactive;
+            TouchArea { clicked => { edit-msg(msg-id); } }
+            Text { text: "✏"; color: Theme.text-secondary; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+        }
+        if is-own : Rectangle {
+            width: 24px; height: 24px; border-radius: 4px;
+            background: Theme.danger;
+            TouchArea { clicked => { delete-msg(msg-id); } }
+            Text { text: "✕"; color: Theme.text-primary; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
+        }
+    }
+}
+
 export component ChatPanel {
     in-out property <string> active-channel-id;
     in-out property <string> active-channel-name;
@@ -34,9 +84,17 @@ export component ChatPanel {
     in-out property <bool> is-dm;
     in-out property <bool> e2ee-enabled;
     in-out property <string> dm-partner-name;
+    in-out property <string> replying-to-message;
+    in-out property <string> replying-to-sender;
+    in-out property <string> replying-to-content;
 
     callback send-message(string, string);
     callback load-more(string);
+    callback react(string, string);
+    callback reply-to-msg(string);
+    callback edit-msg(string);
+    callback delete-msg(string);
+    callback cancel-reply();
 
     VerticalLayout {
         padding: 0;
@@ -63,16 +121,25 @@ export component ChatPanel {
         Flickable {
             VerticalLayout {
                 for msg in messages: Rectangle {
-                    height: 60px;
+                    height: 72px;
                     VerticalLayout {
-                        padding: 8px;
-                        spacing: 4px;
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        padding-top: 6px;
+                        padding-bottom: 6px;
+                        spacing: 2px;
+                        if msg.reply_to != "" : Text {
+                            text: "↳ " + msg.reply_to;
+                            color: Theme.text-muted;
+                            font-size: 11px;
+                        }
                         HorizontalLayout {
                             spacing: 8px;
                             Text {
                                 text: msg.sender_name;
                                 color: Theme.accent;
                                 font-weight: 700;
+                                font-size: 13px;
                             }
                             Text {
                                 text: msg.timestamp;
@@ -83,8 +150,55 @@ export component ChatPanel {
                         Text {
                             text: msg.content;
                             wrap: word-wrap;
+                            color: Theme.text-primary;
+                            font-size: 14px;
+                        }
+                        HorizontalLayout {
+                            height: 22px;
+                            MessageActions {
+                                is-own: msg.is_own;
+                                msg-id: msg.message_id;
+                                react(id, emoji) => { root.react(id, emoji); }
+                                reply-to-msg(id) => { root.reply-to-msg(id); }
+                                edit-msg(id) => { root.edit-msg(id); }
+                                delete-msg(id) => { root.delete-msg(id); }
+                            }
                         }
                     }
+                }
+            }
+        }
+
+        if replying-to-message != "" : Rectangle {
+            height: 32px;
+            background: Theme.bg-elevated;
+            HorizontalLayout {
+                padding-left: 8px;
+                padding-right: 8px;
+                spacing: 8px;
+                Rectangle {
+                    width: 3px;
+                    height: 20px;
+                    background: Theme.accent;
+                    border-radius: 2px;
+                }
+                Text {
+                    text: "Replying to " + replying-to-sender;
+                    color: Theme.text-secondary;
+                    font-size: 12px;
+                }
+                Text {
+                    text: replying-to-content;
+                    color: Theme.text-muted;
+                    font-size: 12px;
+                    horizontal-stretch: 1;
+                    overflow: elide;
+                }
+                Rectangle {
+                    width: 20px; height: 20px; border-radius: 4px;
+                    background: Theme.bg-interactive;
+                    TouchArea { clicked => { cancel-reply(); } }
+                    Text { text: "✕"; color: Theme.text-muted; font-size: 12px; horizontal-alignment: center; vertical-alignment: center; }
                 }
             }
         }
@@ -98,6 +212,7 @@ export component ChatPanel {
                 TextInput {
                     text <=> input-text;
                     horizontal-stretch: 1;
+                    font-size: 14px;
                 }
                 Rectangle {
                     width: 64px;

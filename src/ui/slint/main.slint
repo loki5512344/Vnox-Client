@@ -4,6 +4,7 @@ import { ChatPanel, MessageItem, MemberItem } from "chat.slint";
 import { FriendsPanel, FriendItem } from "friends.slint";
 import { VoicePanel, VoiceMemberItem } from "voice.slint";
 import { BookmarkItem, ConnectScreen } from "connect.slint";
+import { SettingsWindow } from "settings.slint";
 
 export component MainWindow inherits Window {
     in-out property <[ChannelItem]> channels;
@@ -13,6 +14,7 @@ export component MainWindow inherits Window {
     in-out property <string> user-status;
     in-out property <string> active-channel-id;
     in-out property <int> active-guild-idx;
+    in-out property <bool> show-dms;
 
     in-out property <string> active-channel-name;
     in-out property <[MessageItem]> messages;
@@ -24,6 +26,9 @@ export component MainWindow inherits Window {
     in-out property <bool> show-chat;
     in-out property <bool> show-friends;
     in-out property <bool> show-voice;
+    in-out property <string> replying-to-message;
+    in-out property <string> replying-to-sender;
+    in-out property <string> replying-to-content;
 
     in-out property <[FriendItem]> friends;
     in-out property <[FriendItem]> pending-requests;
@@ -52,6 +57,23 @@ export component MainWindow inherits Window {
     in-out property <int> vad-mode: 0;
     in-out property <float> volume: 100.0;
     in-out property <string> active-tab: "audio";
+    in-out property <bool> settings-open;
+
+    in-out property <bool> passphrase-modal-open;
+    in-out property <string> passphrase-input;
+    in-out property <string> passphrase-confirm;
+    in-out property <string> passphrase-error;
+
+    in-out property <bool> export-modal-open;
+    in-out property <string> export-pass-input;
+    in-out property <string> export-pass-confirm;
+    in-out property <string> export-output;
+    in-out property <string> export-error;
+
+    in-out property <bool> import-modal-open;
+    in-out property <string> import-keyfile-input;
+    in-out property <string> import-pass-input;
+    in-out property <string> import-error;
 
     callback channel-selected(string);
     callback guild-selected(int);
@@ -59,6 +81,11 @@ export component MainWindow inherits Window {
     callback disconnect();
     callback send-message(string, string);
     callback load-more(string);
+    callback react(string, string);
+    callback reply-to-msg(string);
+    callback edit-msg(string);
+    callback delete-msg(string);
+    callback cancel-reply();
     callback add-friend(string);
     callback accept-friend(string);
     callback decline-friend(string);
@@ -71,9 +98,10 @@ export component MainWindow inherits Window {
     callback remove-bookmark(string);
     callback add-bookmark(string);
     callback close-settings();
-    callback set-passphrase(string);
-    callback export-keyfile();
-    callback import-keyfile();
+    callback set-passphrase(string, string);
+    callback remove-passphrase();
+    callback export-keyfile(string, string);
+    callback import-keyfile(string, string);
 
     min-width: 900px;
     min-height: 560px;
@@ -101,6 +129,7 @@ export component MainWindow inherits Window {
             user-status: root.user-status;
             active-channel-id: root.active-channel-id;
             active-guild-idx: root.active-guild-idx;
+            show-dms: root.show-dms;
             channel-selected(id) => { root.channel-selected(id); }
             guild-selected(idx) => { root.guild-selected(idx); }
             dm-selected(id) => { root.dm-selected(id); }
@@ -116,8 +145,16 @@ export component MainWindow inherits Window {
             is-dm: root.is-dm;
             e2ee-enabled: root.e2ee-enabled;
             dm-partner-name: root.dm-partner-name;
+            replying-to-message: root.replying-to-message;
+            replying-to-sender: root.replying-to-sender;
+            replying-to-content: root.replying-to-content;
             send-message(id, text) => { root.send-message(id, text); }
             load-more(id) => { root.load-more(id); }
+            react(id, emoji) => { root.react(id, emoji); }
+            reply-to-msg(id) => { root.reply-to-msg(id); }
+            edit-msg(id) => { root.edit-msg(id); }
+            delete-msg(id) => { root.delete-msg(id); }
+            cancel-reply => { root.cancel-reply(); }
         }
         friends-panel := FriendsPanel {
             visible: show-friends;
@@ -142,6 +179,45 @@ export component MainWindow inherits Window {
             toggle-mic => { root.toggle-mic(); }
             toggle-deafen => { root.toggle-deafen(); }
             leave-voice => { root.leave-voice(); }
+        }
+
+        if root.settings-open : Rectangle {
+            background: #00000080;
+            TouchArea { }
+            SettingsWindow {
+                y: (parent.height - 480px) / 2;
+                x: (parent.width - 640px) / 2;
+                identity-pubkey: root.identity-pubkey;
+                vault-enabled: root.vault-enabled;
+                voice-input-device: root.voice-input-device;
+                voice-output-device: root.voice-output-device;
+                voice-bitrate: root.voice-bitrate;
+                vad-mode: root.vad-mode;
+                volume: root.volume;
+                active-tab: root.active-tab;
+
+                passphrase-modal-open: root.passphrase-modal-open;
+                passphrase-input: root.passphrase-input;
+                passphrase-confirm: root.passphrase-confirm;
+                passphrase-error: root.passphrase-error;
+
+                export-modal-open: root.export-modal-open;
+                export-pass-input: root.export-pass-input;
+                export-pass-confirm: root.export-pass-confirm;
+                export-output: root.export-output;
+                export-error: root.export-error;
+
+                import-modal-open: root.import-modal-open;
+                import-keyfile-input: root.import-keyfile-input;
+                import-pass-input: root.import-pass-input;
+                import-error: root.import-error;
+
+                close => { root.close-settings(); }
+                set-passphrase(pass, confirm) => { root.set-passphrase(pass, confirm); }
+                remove-passphrase => { root.remove-passphrase(); }
+                export-keyfile(pass, confirm) => { root.export-keyfile(pass, confirm); }
+                import-keyfile(input, pass) => { root.import-keyfile(input, pass); }
+            }
         }
     }
 }

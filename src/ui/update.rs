@@ -588,11 +588,7 @@ fn social_handle(ui: &mut UiState, event: NetEvent) {
                 })
                 .collect();
         }
-        NetEvent::GuildCreated {
-            guild_id,
-            name,
-            ..
-        } => {
+        NetEvent::GuildCreated { guild_id, name, .. } => {
             ui.guilds.push(crate::ui::state::GuildState {
                 guild_id: guild_id.clone(),
                 name,
@@ -656,18 +652,13 @@ fn social_handle(ui: &mut UiState, event: NetEvent) {
         }
         NetEvent::FriendRequested { user_id, nickname } => {
             ui.pending_friend_requests
-                .push(crate::ui::state::FriendState {
-                    user_id,
-                    nickname,
-                });
+                .push(crate::ui::state::FriendState { user_id, nickname });
         }
         NetEvent::FriendAccepted { user_id, nickname } => {
             ui.pending_friend_requests.retain(|f| f.user_id != user_id);
             if !ui.friends.iter().any(|f| f.user_id == user_id) {
-                ui.friends.push(crate::ui::state::FriendState {
-                    user_id,
-                    nickname,
-                });
+                ui.friends
+                    .push(crate::ui::state::FriendState { user_id, nickname });
             }
         }
         NetEvent::FriendRemoved { user_id } => {

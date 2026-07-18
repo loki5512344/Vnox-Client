@@ -1,6 +1,5 @@
 mod ui;
 
-
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Duration;
@@ -68,7 +67,9 @@ fn main() -> Result<()> {
                     let mut s = state.borrow_mut();
                     crate::ui::update::process_net_events(&mut s);
                     let own_id = s.identity.short_id().to_string();
-                    crate::ui::bridge::sync_ui(&win, &s.ui, &own_id);
+                    let own_nick = s.identity.nickname.clone();
+                    let own_pubkey = s.identity.pubkey_hex.clone();
+                    crate::ui::bridge::sync_ui(&win, &s.ui, &own_id, &own_nick, &own_pubkey);
                 }
             },
         );
@@ -163,6 +164,25 @@ fn wire_signals(window: &MainWindow, state: &Rc<RefCell<AppState>>) {
                 return;
             }
             let mut s = state.borrow_mut();
+
+            if let Some(edit_id) = s.ui.editing_message_id.take() {
+                let net = s.net.clone();
+                s.ui.chat_input = String::new();
+                drop(s);
+                tokio::spawn(async move {
+                    net.send(NetCommand::MessageEdit {
+                        channel_id: ch_id,
+                        message_id: edit_id,
+                        content: text,
+                    })
+                    .await;
+                });
+                return;
+            }
+
+            let reply_to = s.ui.replying_to_message.take();
+            s.ui.replying_to_sender.clear();
+            s.ui.replying_to_content.clear();
             s.ui.chat_input = String::new();
             let net = s.net.clone();
             drop(s);
@@ -172,7 +192,7 @@ fn wire_signals(window: &MainWindow, state: &Rc<RefCell<AppState>>) {
                     net.send(NetCommand::SendChat {
                         channel_id: ch_id,
                         content: text,
-                        reply_to: None,
+                        reply_to,
                     })
                     .await;
                 });
@@ -332,17 +352,169 @@ fn wire_signals(window: &MainWindow, state: &Rc<RefCell<AppState>>) {
     }
 
     {
-        let _state = state.clone();
-        window.on_set_passphrase(move |_pass| {});
+        let state = state.clone();
+        window.on_set_passphrase(move |pass, confirm| {
+            let mut s = state.borrow_mut();
+            if pass != confirm {
+                s.ui.settings_passphrase_error =
+                    Some("Passphrases do not match".to_string());
+                return;
+            }
+            if pass.len() < 8 {
+                s.ui.settings_passphrase_error =
+                    Some("Passphrase must be at least 8 characters".to_string());
+                return;
+            }
+            s.ui.settings_passphrase_error = None;
+            let identity = s.identity.clone();
+            drop(s);
+            if let Err(e) = identity::save(&identity, Some(pass.as_str())) {
+                let mut s = state.borrow_mut();
+                s.ui.settings_passphrase_error = Some(format!("{e}"));
+            }
+        });
     }
 
     {
-        let _state = state.clone();
-        window.on_export_keyfile(move || {});
+        let state = state.clone();
+        window.on_remove_passphrase(move || {
+            let s = state.borrow();
+            let identity = s.identity.clone();
+            drop(s);
+            if let Err(e) = identity::save(&identity, None) {
+                let mut s = state.borrow_mut();
+                s.ui.settings_passphrase_error = Some(format!("{e}"));
+            }
+        });
     }
 
     {
-        let _state = state.clone();
-        window.on_import_keyfile(move || {});
+        let state = state.clone();
+        window.on_export_keyfile(move |pass, confirm| {
+            let mut s = state.borrow_mut();
+            if pass != confirm {
+                s.ui.settings_export_error = Some("Passphrases do not match".to_string());
+                return;
+            }
+            let passphrase = if pass.is_empty() { None } else { Some(pass.as_str()) };
+            let identity = s.identity.clone();
+            drop(s);
+            match identity::export_keyfile(&identity, passphrase) {
+                Ok(json) => {
+                    let mut s = state.borrow_mut();
+                    s.ui.settings_export_output = Some(json);
+                    s.ui.settings_export_error = None;
+                }
+                Err(e) => {
+                    let mut s = state.borrow_mut();
+                    s.ui.settings_export_error = Some(format!("{e}"));
+                }
+            }
+        });
+    }
+
+    {
+        let state = state.clone();
+        window.on_import_keyfile(move |input, pass| {
+            let input = input.to_string();
+            let passphrase = if pass.is_empty() { None } else { Some(pass.as_str()) };
+            let mut s = state.borrow_mut();
+            match identity::import_keyfile(&input, passphrase) {
+                Ok(identity) => {
+                    if let Err(e) = identity::save(&identity, None) {
+                        s.ui.settings_import_error = Some(format!("{e}"));
+                    } else {
+                        s.ui.settings_import_error = None;
+                        // Will need restart to take full effect
+                    }
+                }
+                Err(e) => {
+                    s.ui.settings_import_error = Some(format!("{e}"));
+                }
+            }
+        });
+    }
+
+    {
+        let state = state.clone();
+        window.on_react(move |msg_id, emoji| {
+            let msg_id = msg_id.to_string();
+            let emoji = emoji.to_string();
+            let s = state.borrow();
+            let ch_id = s.ui.active_channel.clone().unwrap_or_default();
+            let net = s.net.clone();
+            drop(s);
+            tokio::spawn(async move {
+                net.send(NetCommand::ReactionAdd {
+                    channel_id: ch_id,
+                    message_id: msg_id,
+                    emoji,
+                })
+                .await;
+            });
+        });
+    }
+
+    {
+        let state = state.clone();
+        window.on_reply_to_msg(move |msg_id| {
+            let msg_id = msg_id.to_string();
+            let mut s = state.borrow_mut();
+            s.ui.replying_to_message = Some(msg_id.clone());
+            if let Some(ch_id) = s.ui.active_channel.clone() {
+                if let Some(msgs) = s.ui.messages.get(&ch_id) {
+                    if let Some(m) = msgs.iter().find(|m| m.message_id == msg_id) {
+                        let sender = m.sender_id.clone();
+                        let content = m.content.clone();
+                        s.ui.replying_to_sender = sender;
+                        s.ui.replying_to_content = content;
+                    }
+                }
+            }
+        });
+    }
+
+    {
+        let state = state.clone();
+        window.on_cancel_reply(move || {
+            let mut s = state.borrow_mut();
+            s.ui.replying_to_message = None;
+            s.ui.replying_to_sender.clear();
+            s.ui.replying_to_content.clear();
+        });
+    }
+
+    {
+        let state = state.clone();
+        window.on_edit_msg(move |msg_id| {
+            let msg_id = msg_id.to_string();
+            let mut s = state.borrow_mut();
+            if let Some(ch_id) = s.ui.active_channel.clone() {
+                if let Some(msgs) = s.ui.messages.get(&ch_id) {
+                    if let Some(m) = msgs.iter().find(|m| m.message_id == msg_id) {
+                        s.ui.chat_input = m.content.clone();
+                        s.ui.editing_message_id = Some(msg_id);
+                    }
+                }
+            }
+        });
+    }
+
+    {
+        let state = state.clone();
+        window.on_delete_msg(move |msg_id| {
+            let msg_id = msg_id.to_string();
+            let s = state.borrow();
+            let ch_id = s.ui.active_channel.clone().unwrap_or_default();
+            let net = s.net.clone();
+            drop(s);
+            tokio::spawn(async move {
+                net.send(NetCommand::MessageDelete {
+                    channel_id: ch_id,
+                    message_id: msg_id,
+                })
+                .await;
+            });
+        });
     }
 }

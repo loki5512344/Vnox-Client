@@ -63,7 +63,9 @@ fn set_members_state(window: &MainWindow, state: &UiState, ch_id: &str) {
     }
 }
 
-fn sync_sidebar(window: &MainWindow, state: &UiState) {
+fn sync_sidebar(window: &MainWindow, state: &UiState, own_nickname: &str) {
+    let guild_id = state.active_guild_id.as_deref();
+
     let channels: Vec<ChannelItem> = state
         .channels
         .iter()
@@ -78,9 +80,18 @@ fn sync_sidebar(window: &MainWindow, state: &UiState) {
     let guilds: Vec<GuildItem> = state
         .guilds
         .iter()
-        .map(|g| GuildItem {
-            guild_id: SharedString::from(g.guild_id.as_str()),
-            name: SharedString::from(g.name.as_str()),
+        .map(|g| {
+            let short = if g.name.len() >= 2 {
+                g.name[..2].to_string()
+            } else {
+                g.name.clone()
+            };
+            GuildItem {
+                guild_id: SharedString::from(g.guild_id.as_str()),
+                name: SharedString::from(g.name.as_str()),
+                short_name: SharedString::from(short),
+                selected: Some(g.guild_id.as_str()) == guild_id,
+            }
         })
         .collect();
     window.set_guilds(Rc::new(VecModel::from(guilds)).into());
@@ -92,8 +103,14 @@ fn sync_sidebar(window: &MainWindow, state: &UiState) {
         .collect();
     window.set_dm_conversations(Rc::new(VecModel::from(dms)).into());
 
-    window.set_username(SharedString::from("user"));
+    window.set_username(SharedString::from(own_nickname));
     window.set_user_status(SharedString::from("online"));
+    window.set_show_dms(guild_id.is_none() && !state.dm_conversations.is_empty());
+    window.set_replying_to_message(SharedString::from(
+        state.replying_to_message.as_deref().unwrap_or(""),
+    ));
+    window.set_replying_to_sender(SharedString::from(state.replying_to_sender.as_str()));
+    window.set_replying_to_content(SharedString::from(state.replying_to_content.as_str()));
     window.set_active_channel_id(SharedString::from(
         state.active_channel.as_deref().unwrap_or(""),
     ));
@@ -246,8 +263,8 @@ pub fn sync_connect(window: &MainWindow, state: &UiState) {
     }
 }
 
-pub fn sync_settings(window: &MainWindow, state: &UiState) {
-    window.set_identity_pubkey(SharedString::from(""));
+pub fn sync_settings(window: &MainWindow, state: &UiState, own_pubkey: &str) {
+    window.set_identity_pubkey(SharedString::from(own_pubkey));
     window.set_vault_enabled(false);
     window.set_voice_input_device(SharedString::from(""));
     window.set_voice_output_device(SharedString::from(""));
@@ -255,13 +272,46 @@ pub fn sync_settings(window: &MainWindow, state: &UiState) {
     window.set_vad_mode(state.vad_mode as i32);
     window.set_volume(state.output_volume);
     window.set_active_tab(SharedString::from("audio"));
+    window.set_settings_open(state.settings_open);
+
+    window.set_passphrase_modal_open(state.settings_passphrase_open);
+    window.set_passphrase_input(SharedString::from(state.settings_passphrase_input.as_str()));
+    window.set_passphrase_confirm(SharedString::from(
+        state.settings_passphrase_confirm.as_str(),
+    ));
+    window.set_passphrase_error(SharedString::from(
+        state.settings_passphrase_error.as_deref().unwrap_or(""),
+    ));
+
+    window.set_export_modal_open(state.settings_export_open);
+    window.set_export_pass_input(SharedString::from(state.settings_export_pass.as_str()));
+    window.set_export_pass_confirm(SharedString::from(state.settings_export_confirm.as_str()));
+    window.set_export_output(SharedString::from(
+        state.settings_export_output.as_deref().unwrap_or(""),
+    ));
+    window.set_export_error(SharedString::from(
+        state.settings_export_error.as_deref().unwrap_or(""),
+    ));
+
+    window.set_import_modal_open(state.settings_import_open);
+    window.set_import_keyfile_input(SharedString::from(state.settings_import_input.as_str()));
+    window.set_import_pass_input(SharedString::from(state.settings_import_pass.as_str()));
+    window.set_import_error(SharedString::from(
+        state.settings_import_error.as_deref().unwrap_or(""),
+    ));
 }
 
-pub fn sync_ui(window: &MainWindow, state: &UiState, own_user_id: &str) {
-    sync_sidebar(window, state);
+pub fn sync_ui(
+    window: &MainWindow,
+    state: &UiState,
+    own_user_id: &str,
+    own_nickname: &str,
+    own_pubkey: &str,
+) {
+    sync_sidebar(window, state, own_nickname);
     sync_chat(window, state, own_user_id);
     sync_friends(window, state);
     sync_voice(window, state);
     sync_connect(window, state);
-    sync_settings(window, state);
+    sync_settings(window, state, own_pubkey);
 }

@@ -85,4 +85,25 @@ pub struct UiState {
     pub remote_speaking: bool,
     pub last_remote_speaker_id: String,
     pub last_voice_packet_ms: u64,
+
+    pub replying_to_message: Option<String>,
+    pub replying_to_sender: String,
+    pub replying_to_content: String,
+    pub editing_message_id: Option<String>,
+
+    pub settings_passphrase_open: bool,
+    pub settings_passphrase_input: String,
+    pub settings_passphrase_confirm: String,
+    pub settings_passphrase_error: Option<String>,
+
+    pub settings_export_open: bool,
+    pub settings_export_pass: String,
+    pub settings_export_confirm: String,
+    pub settings_export_output: Option<String>,
+    pub settings_export_error: Option<String>,
+
+    pub settings_import_open: bool,
+    pub settings_import_input: String,
+    pub settings_import_pass: String,
+    pub settings_import_error: Option<String>,
 }
