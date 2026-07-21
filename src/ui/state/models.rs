@@ -5,6 +5,7 @@ pub struct Channel {
     pub id: String,
     pub name: String,
     pub kind: String,
+    pub guild_id: Option<String>,
     pub members: Vec<String>,
 }
 

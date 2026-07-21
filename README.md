@@ -1,74 +1,131 @@
-# VNOX
+# VNOX — Client
 
-Self-hosted realtime voice and chat. Decentralized. Lightweight. Moddable.
-Built on LNEx, a custom protocol for low-latency federated communication.
+> Native desktop client for VNOX. Voice, text, no cloud.
 
-Not Discord. Not TeamSpeak. Not cloud.
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org/)
+[![Status: Phase 1](https://img.shields.io/badge/status-phase%201%20%E2%80%94%20implemented-yellow.svg)](docs/00-status.md)
 
-```
-vnox://server/channel
-```
+---
 
-## Quick links
+## What is this?
 
-- [Architecture](docs/01-architecture.md)
-- [Protocol](docs/02-protocol/README.md)
-- [Current status and limitations](docs/00-status.md)
-- [Server setup](docs/03-server/deployment.md)
-- [Local dev config](dev/README.md)
-- [Contributing](docs/community/contributing.md)
-- [Changelog](CHANGELOG.md)
+The official desktop client for [VNOX](https://github.com/loki5512344/Vnox) — a self-hosted voice and text communication platform. Connects to a VNOX server over the LNEx protocol.
+
+- Connects to gateway via **TCP** (text, auth, channels, guilds, DMs)
+- Connects to voice node via **UDP** (encrypted Opus voice packets)
+- Opus audio encoding/decoding with adaptive jitter buffer
+- Native UI built with **Slint** — no Electron, no web views
+
+---
+
+## Features
+
+### Implemented
+- **Auth:** Ed25519 keypair generation, challenge-response login, reconnect with exponential backoff
+- **Encryption:** ChaCha20-Poly1305 AEAD + X25519 ECDH key exchange
+- **Text chat:** Persistent history, reactions, replies, edit, delete, typing indicators, read receipts
+- **Channel management:** Join, leave, create, delete; text and voice channels
+- **Guilds:** Create, list, leave, member list with roles, kick, audit log viewer
+- **Roles:** Role list, assign/unassign with permission checks
+- **Direct Messages:** 1:1 DMs with persistent history, unread badges, search
+- **Friends:** Requests, accept/decline, Online/All/Pending/Blocked tabs
+- **Presence:** Online/Idle/DND/Invisible, custom status text, activity display
+- **Voice:** PTT / VAD / always-on modes, configurable bitrate, per-user volume
+- **Jitter buffer:** Adaptive mode, configurable target latency
+- **Noise suppression:** RNNoise (feature-gated, off by default)
+- **Identity vault:** Optional Argon2id + ChaCha20-Poly1305 encrypted keyfile
+- **Keyfile export/import:** Encrypted or plain JSON with passphrase
+- **Bookmarks:** Save/remove server nodes in connect screen
+
+### Planned
+- In-game overlay (Phase 2)
+- Federation support (Phase 3)
+- Mobile client (Phase 3)
+
+---
 
 ## Status
 
-Phase 1: implemented, not production ready.
+Phase 1 is implemented. Not production ready.
 
-See [docs/00-status.md](docs/00-status.md) for an honest list of what works,
-what is only specified on paper, and known gaps.
+| Feature              | Status                     |
+|----------------------|----------------------------|
+| Connect to server    | ✅ Working                  |
+| Text chat            | ✅ Working                  |
+| Channel management   | ✅ Working                  |
+| Guilds & roles       | ✅ Working                  |
+| Direct Messages      | ✅ Working                  |
+| Friends & presence   | ✅ Working                  |
+| Voice (send/receive) | 🔧 Partial (audio pipeline) |
+| Encryption           | ✅ ChaCha20-Poly1305 + X25519 |
+| In-game overlay      | 🔲 Phase 2                  |
+| Mobile client        | 🔲 Phase 3                  |
 
-| Component      | Status |
-|----------------|--------|
-| Gateway        | TCP listener, LNEx handshake, channels, chat, SQLite |
-| Voice node     | UDP relay, voice packet routing |
-| Desktop client | egui UI, net layer, audio pipeline (partial) |
-| LNEx protocol  | Specified and implemented (JSON in Phase 1) |
-| Federation     | Planned (Phase 3) |
-| Mobile client  | Planned (Phase 3) |
+See [docs/00-status.md](docs/00-status.md) for a full breakdown.
 
-Traffic in v0.1.x is **unencrypted plaintext**. Do not use in production.
+---
 
-## Running locally
+## Quick start
 
-Requires Rust 1.85+.
+**Requirements:** Rust 1.85+, a running [VNOX Server](https://github.com/loki5512344/Vnox)
 
-```sh
-# terminal 1 - gateway
+```bash
+# Terminal 1 — gateway
 cargo run -p vnox-gateway -- --config dev/config.toml
 
-# terminal 2 - voice node
+# Terminal 2 — voice node
 cargo run -p vnox-voice-node -- --config dev/config.toml
 
-# terminal 3 - client
+# Terminal 3 — client
 cargo run -p vnox-client
 ```
 
-The client connects to `127.0.0.1:7600` by default (editable in the UI).
-Config details: [dev/README.md](dev/README.md).
+The client connects to `127.0.0.1:7600` by default. You can change the address in the UI on the connect screen.
 
 ### Opus on Windows
 
-`audiopus_sys` builds libopus from source via CMake.
-CMake 4.x requires a policy flag, already set in `.cargo/config.toml`:
+`audiopus_sys` builds libopus from source via CMake. CMake 4.x policy flag is already set in `.cargo/config.toml` — no manual steps needed.
 
-```toml
-[env]
-CMAKE_POLICY_VERSION_MINIMUM = "3.5"
+---
+
+## Tech stack
+
+| Layer       | Technology                     |
+|-------------|--------------------------------|
+| UI          | Slint                          |
+| Networking  | Tokio (async TCP + UDP)        |
+| Audio       | cpal + rodio + opus + rnnoise  |
+| Identity    | ed25519-dalek + x25519-dalek   |
+| Crypto      | ChaCha20-Poly1305 + Argon2id   |
+| Protocol    | LNEx v1 (JSON, Phase 1)        |
+
+---
+
+## Project structure
+
+```
+src/
+├── main.rs             # Entry point
+├── ui/                 # Slint UI (slint files + Rust glue)
+├── net/                # LNEx TCP + UDP networking
+│   ├── crypto/         # Session encryption
+│   ├── framing/        # Packet read/write
+│   ├── voice/          # UDP voice send/recv
+│   └── session/        # Connection lifecycle, reconnection
+├── audio/              # Audio pipeline
+│   ├── capture.rs      # Mic → Opus encode
+│   ├── playback.rs     # Opus decode → speaker
+│   ├── config.rs       # Bitrate, VAD, jitter settings
+│   └── processing/     # VAD, noise suppression
+├── identity_vault.rs   # Argon2id-encrypted keyfile
+├── app.rs              # UI state and event dispatch
+└── jitter/             # Jitter buffer
 ```
 
-No manual steps needed.
+---
 
 ## License
 
-GPL-3.0. See [docs/LICENSE.md](docs/LICENSE.md).
-
-The LNEx protocol specification is CC0 (public domain).
+Client code: **GPL-3.0** — see [LICENSE](LICENSE)  
+LNEx protocol specification: **CC0** (public domain)

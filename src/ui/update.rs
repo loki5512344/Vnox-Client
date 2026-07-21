@@ -311,6 +311,7 @@ fn chat_handle(ui: &mut UiState, net: &NetHandle, event: NetEvent) {
             channel_name,
             kind,
             members,
+            guild_id,
             ..
         } => {
             let mems: Vec<String> = members
@@ -322,11 +323,15 @@ fn chat_handle(ui: &mut UiState, net: &NetHandle, event: NetEvent) {
                 .collect();
             if let Some(ch) = ui.channels.iter_mut().find(|c| c.id == channel_id) {
                 ch.members = mems;
+                if guild_id.is_some() {
+                    ch.guild_id = guild_id.clone();
+                }
             } else {
                 ui.channels.push(crate::ui::state::Channel {
                     id: channel_id.clone(),
                     name: channel_name,
                     kind: kind.clone(),
+                    guild_id: guild_id.clone(),
                     members: mems,
                 });
             }
@@ -347,12 +352,14 @@ fn chat_handle(ui: &mut UiState, net: &NetHandle, event: NetEvent) {
             channel_id,
             channel_name,
             kind,
+            guild_id,
         } => {
             if !ui.channels.iter().any(|c| c.id == channel_id) {
                 ui.channels.push(crate::ui::state::Channel {
                     id: channel_id,
                     name: channel_name,
                     kind,
+                    guild_id,
                     members: Vec::new(),
                 });
             }
@@ -381,6 +388,7 @@ fn chat_handle(ui: &mut UiState, net: &NetHandle, event: NetEvent) {
                         id: c.channel_id,
                         name: c.channel_name,
                         kind: c.kind,
+                        guild_id: c.guild_id,
                         members,
                     }
                 })

@@ -60,21 +60,21 @@ export component SettingsWindow {
                         background: active-tab == "audio" ? Theme.accent : Theme.bg-interactive;
                         border-radius: Theme.radius;
                         TouchArea { clicked => { active-tab = "audio"; } }
-                        Text { text: "Audio"; color: Theme.text-primary; font-size: 13px; padding-left: 12px; padding-right: 12px; horizontal-alignment: center; vertical-alignment: center; }
+                        Text { text: "Audio"; color: Theme.text-primary; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; }
                     }
                     Rectangle {
                         height: 28px;
                         background: active-tab == "network" ? Theme.accent : Theme.bg-interactive;
                         border-radius: Theme.radius;
                         TouchArea { clicked => { active-tab = "network"; } }
-                        Text { text: "Network"; color: Theme.text-primary; font-size: 13px; padding-left: 12px; padding-right: 12px; horizontal-alignment: center; vertical-alignment: center; }
+                        Text { text: "Network"; color: Theme.text-primary; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; }
                     }
                     Rectangle {
                         height: 28px;
                         background: active-tab == "identity" ? Theme.accent : Theme.bg-interactive;
                         border-radius: Theme.radius;
                         TouchArea { clicked => { active-tab = "identity"; } }
-                        Text { text: "Identity"; color: Theme.text-primary; font-size: 13px; padding-left: 12px; padding-right: 12px; horizontal-alignment: center; vertical-alignment: center; }
+                        Text { text: "Identity"; color: Theme.text-primary; font-size: 13px; horizontal-alignment: center; vertical-alignment: center; }
                     }
                     HorizontalLayout { horizontal-stretch: 1; }
                     Rectangle {

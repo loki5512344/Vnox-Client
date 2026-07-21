@@ -14,6 +14,7 @@ pub enum NetCommand {
         channel_id: String,
         channel_name: String,
         kind: String,
+        guild_id: Option<String>,
     },
     ChannelDelete {
         channel_id: String,

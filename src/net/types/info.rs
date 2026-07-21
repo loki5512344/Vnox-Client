@@ -10,6 +10,7 @@ pub struct ChannelListItem {
     pub channel_id: String,
     pub channel_name: String,
     pub kind: String,
+    pub guild_id: Option<String>,
 }
 
 #[derive(Debug, Clone)]

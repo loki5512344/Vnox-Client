@@ -69,6 +69,10 @@ fn sync_sidebar(window: &MainWindow, state: &UiState, own_nickname: &str) {
     let channels: Vec<ChannelItem> = state
         .channels
         .iter()
+        .filter(|c| match guild_id {
+            None => true,
+            Some(gid) => c.guild_id.as_deref() == Some(gid) || c.guild_id.is_none(),
+        })
         .map(|c| ChannelItem {
             channel_id: SharedString::from(c.id.as_str()),
             name: SharedString::from(c.name.as_str()),

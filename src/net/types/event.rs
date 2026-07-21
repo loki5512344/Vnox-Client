@@ -23,11 +23,13 @@ pub enum NetEvent {
         kind: String,
         members: Vec<MemberInfo>,
         voice_endpoint: String,
+        guild_id: Option<String>,
     },
     ChannelCreated {
         channel_id: String,
         channel_name: String,
         kind: String,
+        guild_id: Option<String>,
     },
     ChannelDeleted {
         channel_id: String,

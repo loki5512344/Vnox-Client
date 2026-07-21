@@ -102,12 +102,12 @@ pub async fn session_loop(
                         framing::io::write_encrypted(&mut stream, PID_LEAVE_CHANNEL, &mut seq,
                             &serde_json::to_vec(&LeaveChannelPayload { channel_id })?, &crypto).await?;
                     }
-                    Some(NetCommand::ChannelCreate { channel_id, channel_name, kind }) => {
+                    Some(NetCommand::ChannelCreate { channel_id, channel_name, kind, guild_id }) => {
                         let payload = serde_json::to_vec(&ChannelCreatePayload {
                             channel_id,
                             channel_name,
                             kind,
-                            guild_id: None,
+                            guild_id,
                         })?;
                         framing::io::write_encrypted(&mut stream, PID_CHANNEL_CREATE, &mut seq, &payload, &crypto).await?;
                     }

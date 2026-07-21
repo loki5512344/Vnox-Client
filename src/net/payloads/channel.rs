@@ -54,6 +54,8 @@ pub struct ChannelStatePayload {
     pub kind: String,
     pub members: Vec<WireMember>,
     pub voice_endpoint: String,
+    #[serde(default)]
+    pub guild_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -81,6 +83,8 @@ pub struct ChannelListItem {
     pub channel_id: String,
     pub channel_name: String,
     pub kind: String,
+    #[serde(default)]
+    pub guild_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

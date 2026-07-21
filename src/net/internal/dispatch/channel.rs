@@ -25,6 +25,7 @@ pub async fn handle(pid: u16, payload: &[u8], tx: &mpsc::Sender<NetEvent>) -> Re
                         })
                         .collect(),
                     voice_endpoint: p.voice_endpoint,
+                    guild_id: p.guild_id,
                 })
                 .await;
         }
@@ -35,6 +36,7 @@ pub async fn handle(pid: u16, payload: &[u8], tx: &mpsc::Sender<NetEvent>) -> Re
                     channel_id: p.channel_id,
                     channel_name: p.channel_name,
                     kind: p.kind,
+                    guild_id: p.guild_id,
                 })
                 .await;
         }
@@ -57,6 +59,7 @@ pub async fn handle(pid: u16, payload: &[u8], tx: &mpsc::Sender<NetEvent>) -> Re
                             channel_id: c.channel_id,
                             channel_name: c.channel_name,
                             kind: c.kind,
+                            guild_id: c.guild_id,
                         })
                         .collect(),
                 })
